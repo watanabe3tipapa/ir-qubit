@@ -1,78 +1,104 @@
-# 量子コンピュータ入門キット
+<!-- badges -->
+[![License](https://img.shields.io/github/license/watanabe3tipapa/ir-qubit.svg)](LICENSE)
+[![Quarto](https://img.shields.io/badge/Quarto-1.9-1496cc?logo=quarto&logoColor=white)](https://quarto.org)
+[![marimo](https://img.shields.io/badge/marimo-0.23+-6E4B9C)](https://marimo.io)
+[![Python](https://img.shields.io/badge/Python-3.12%7C3.13-3776AB?logo=python&logoColor=white)](https://python.org)
+[![Maintenance](https://img.shields.io/badge/Maintenance-Active-brightgreen.svg)](https://github.com/watanabe3tipapa/ir-qubit)
+[![Last commit](https://img.shields.io/github/last-commit/watanabe3tipapa/ir-qubit/main.svg)](https://github.com/watanabe3tipapa/ir-qubit/commits/main)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-2ea44f)](https://watanabe3tipapa.github.io/ir-qubit/)
 
-**「Qubitって何？」から始める、ブラウザで動く量子入門教材（Quarto × marimo）**
+[English](README.md) | [日本語](README_ja.md)
 
-中学生でも量子コンピュータの基本概念を直感的につかめるよう、
-コインの例えと **動く回路シミュレーション**（marimo islands）を組み合わせた Web サイトです。
+# Quantum Computer Starter Kit
 
-- サイト内のデモは **ブラウザ上（WebAssembly / Pyodide）** で動きます。インストール不要。
-- 本格的な量子 SDK **Qiskit** を使った marimo ノートブックも同梱しています。
+**"What is a Qubit?" — a browser-based quantum starter kit that runs without installation.**
 
-## 構成
+Built with **Quarto × marimo**, this kit uses coin analogies and **live circuit
+simulations** so that even middle school students can intuitively grasp the core
+concepts of quantum computing — superposition, entanglement, and quantum
+algorithms.
 
-```
-ir-qubit/
-├── _quarto.yml               # Quarto サイト設定（+ marimo 用 pyproject）
-├── index.qmd                 # LP（ランディングページ）
-├── lessons/                  # レッスン6本（インタラクティブ・デモ入り）
-├── worksheets.qmd            # ワークシート（印刷用）
-├── notebooks.qmd             # Qiskit ノートブックの使い方
-├── notebooks/                # ローカル実行用 marimo（Qiskit 版）
-│   ├── 01_qubit_superposition.py
-│   └── 02_entanglement.py
-├── lib/sim.py                # 教育用 numpy シミュレータ（リファレンス）
-├── lib/sim_cell.qmd          # 同上（レッスンの背景セルに include）
-└── _extensions/marimo-team/  # quarto-marimo 拡張
-```
+- **Everything runs in the browser** (WebAssembly / Pyodide). No installation needed.
+- **Interactive demos** — move a slider or click a gate, and the probability and histogram update instantly.
+- **Qiskit notebooks** included for those ready to try a real quantum SDK.
 
-## ローカルで開発・プレビュー
+## Motivation
+
+Quantum computing sounds fascinating, but most tutorials assume you already know
+linear algebra and Dirac notation. Inspired by *Nielsen & Chuang*, I wanted a
+place where learners can *feel* superposition and entanglement before ever
+writing a formula — by touching sliders and watching a coin toss turn into a
+quantum coin.
+
+This kit started as a draft produced through a long, long conversation with an
+OpenAI LLM. There is still a lot for us to learn about quantum computing, so the
+content is by no means authoritative — feedback and corrections are very welcome.
+
+## Features
+
+- **Runs in the browser** — demos execute on Pyodide (WASM); zero setup
+- **Six interactive lessons** — Qubit, superposition, entanglement, gates, measurement, algorithms
+- **Live simulations** — state vectors and histograms recalculate in real time
+- **Printable worksheets** — for classroom use and self-study review
+- **Qiskit notebooks** — hands-on experiments with the real quantum SDK (local run)
+- **Self-contained numpy simulator** — an educational state-vector simulator (`lib/sim.py`)
+- **Auto-deployed** — GitHub Pages workflow publishes the latest site on every push
+
+## Screenshot
+
+<!-- Add screenshots here -->
+
+Try the live site: [Quantum Computer Starter Kit](https://watanabe3tipapa.github.io/ir-qubit/)
+
+## Installation
 
 ```bash
-# 1) 環境構築（uv を使う場合）
+# 1) Environment setup (with uv)
 uv sync
 
-# 2) プレビュー（http://localhost:4321）
-uv run quarto preview
-
-# 3) 静的サイト生成（_site/ に出力）
-uv run quarto render
-```
-
-`venv` を使う場合：
-
-```bash
+# or, with a plain venv
 python -m venv .venv
 source .venv/bin/activate
 pip install marimo numpy matplotlib qiskit qiskit-aer
-quarto render
 ```
 
-## Qiskit ノートブックを自分の PC で実行
+## Usage
+
+```bash
+# Local preview at http://localhost:4321
+uv run quarto preview
+
+# Build the static site into _site/
+uv run quarto render
+```
+
+Run the Qiskit notebooks on your own machine:
 
 ```bash
 uv run marimo edit notebooks/01_qubit_superposition.py
 uv run marimo edit notebooks/02_entanglement.py
 ```
 
-## 技術メモ（Quarto × marimo）
+> Technical note: the in-page demos run on Pyodide (WASM), so they rely only on
+> numpy / matplotlib. Qiskit is Rust-based and cannot run in WASM, so the site
+> ships its own educational numpy simulator and bundles Qiskit notebooks for
+> local execution. See [DEV-MEMO.md](DEV-MEMO.md) for details.
 
-- 公式連携は **`marimo-team/quarto-marimo`** 拡張（`{python .marimo}` セル → marimo islands）。
-- ブラウザ上は Pyodide（WASM）で実行されるため、**numpy / matplotlib のみ**を使う方針。
-- **Qiskit は Rust ベースで WASM 非対応** → サイト内デモは自作の numpy シミュレータ（`lib/sim.py`）で再現。
-- レッスンの背景セルは `{{< include ../lib/sim_cell.qmd >}}` で共有（WASM ではローカル import が保証されないため自己完結）。
-- 依存は各ドキュメントの frontmatter `pyproject`（TOML）で宣言。ビルド時は uv、閲覧時は micropip で解決。
+## Contributing
 
-## デプロイ
+Contributions are welcome!
 
-- GitHub Pages 用ワークフロー `.github/workflows/gh-pages.yml` 付き。
-- `main` に push すると自動で `_site/` が GitHub Pages に公開されます。
-- リポジトリ設定で **Settings → Pages → Source: GitHub Actions** を選択してください。
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a [Pull Request](https://github.com/watanabe3tipapa/ir-qubit/pulls)
 
-## ライセンス
+## License
 
-- 本教材の文書・画像は **CC BY 4.0**（出典明記で自由利用可）。
-- コードは Apache-2.0（quarto-marimo に合わせた例）。
+- **Documentation & images**: [CC BY 4.0](LICENSE-CC-BY)
+- **Code**: [Apache-2.0](LICENSE)
 
----
+## Contact
 
-Planned & designed based on an OpenAI gpt-oss 120B generated draft.
+GitHub: [https://github.com/watanabe3tipapa/ir-qubit](https://github.com/watanabe3tipapa/ir-qubit)
