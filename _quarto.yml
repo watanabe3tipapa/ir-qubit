@@ -1,0 +1,60 @@
+project:
+  type: website
+  render:
+    - index.qmd
+    - worksheets.qmd
+    - notebooks.qmd
+    - lessons/*.qmd
+
+title: "量子コンピュータ入門キット"
+description: "Quarto × marimo で作る、中学生からわかる量子技術のインタラクティブ教材"
+site-url: https://watanabe3tipapa.github.io/ir-qubit/
+
+# 注: marimo の依存関係（numpy, matplotlib）は各レッスンの frontmatter `pyproject`（TOML）で宣言。
+# quarto-marimo 拡張はドキュメントレベルの pyproject を読む。
+
+website:
+  title: "量子コンピュータ入門キット"
+  favicon: images/favicon.svg
+  page-footer:
+    left: "CC BY 4.0 — 量子コンピュータ入門キット"
+    right: "Quarto × marimo"
+  navbar:
+    title: "量子入門キット"
+    left:
+      - text: "ホーム"
+        file: index.qmd
+      - text: "レッスン"
+        menu:
+          - text: "1. Qubit って何？"
+            file: lessons/01-qubit.qmd
+          - text: "2. 重ね合わせ"
+            file: lessons/02-superposition.qmd
+          - text: "3. エンタングルメント"
+            file: lessons/03-entanglement.qmd
+          - text: "4. 量子ゲート入門"
+            file: lessons/04-gates.qmd
+          - text: "5. 測定と確率"
+            file: lessons/05-measurement.qmd
+          - text: "6. 量子アルゴリズム"
+            file: lessons/06-algorithms.qmd
+      - text: "ワークシート"
+        file: worksheets.qmd
+      - text: "自分のPCで試す"
+        file: notebooks.qmd
+    right:
+      - text: "GitHub"
+        href: https://github.com/watanabe3tipapa/ir-qubit
+
+format:
+  html:
+    theme:
+      - cosmo
+      - styles/custom.scss
+    toc: true
+    code-copy: true
+    smooth-scroll: true
+
+resources:
+  - images
+  - styles

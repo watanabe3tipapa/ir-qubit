@@ -1,0 +1,65 @@
+---
+title: "自分のPCで試す（Qiskit ノートブック）"
+description: "本物の量子SDK Qiskit を使った marimo ノートブックを、自分のPCで実行する方法"
+---
+# 自分のPCで試す（Qiskit ノートブック）
+
+サイト内のデモは **ブラウザ上で動く**（numpy シミュレータ）ものでした。
+ここでは、本格的な量子 SDK **Qiskit** を使ったノートブックを、自分の PC で **marimo** 上で実行する方法を紹介します。
+
+::: {.callout-note title="なぜ別にあるの？"}
+Qiskit は Rust ベースのため、ブラウザ（WASM）では動きません。そのため、サイト内のデモは同等の結果を出す「numpy シミュレータ」で再現し、Qiskit は PC 上で実行するファイルとして分けています。
+:::
+
+## 用意するもの
+
+1. **Python 3.12 / 3.13**（インストール済み前提）
+2. **uv**（高速な Python 環境管理ツール）— <https://docs.astral.sh/uv/>
+3. このリポジトリ
+
+```bash
+git clone https://github.com/watanabe3tipapa/ir-qubit.git
+cd ir-qubit
+uv sync            # 依存関係をインストール
+```
+
+## ノートブックを編集しながら実行
+
+```bash
+uv run marimo edit notebooks/01_qubit_superposition.py
+uv run marimo edit notebooks/02_entanglement.py
+```
+
+または、編集不要で**実行専用アプリ**として開く場合：
+
+```bash
+uv run marimo run notebooks/01_qubit_superposition.py
+```
+
+## ノートブック一覧
+
+| ファイル | 内容 | 学べること |
+|---|---|---|
+| `notebooks/01_qubit_superposition.py` | H ゲートで Qubit を重ね合わせ、測定してヒストグラム表示 | 重ね合わせ・測定・確率 |
+| `notebooks/02_entanglement.py` | H + CNOT でベル状態を作り測定 | エンタングルメント |
+
+## 手軽に実行（スクリプトとして）
+
+```bash
+uv run python notebooks/01_qubit_superposition.py
+uv run python notebooks/02_entanglement.py
+```
+
+## 補足：ブラウザ上のシミュレータと同じ内容
+
+- `lib/sim.py` … 教育用 numpy シミュレータ本体（サイト内の各レッスンの背景セルにも同じコードが埋め込まれています）。
+- ブラウザのデモと Qiskit の結果は **原理的に同じ**はずです。ぜひ比べてみてください。
+
+もし `uv` を使わない場合は、通常の `venv` で次のようにしても動きます。
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install marimo qiskit qiskit-aer matplotlib numpy
+marimo edit notebooks/01_qubit_superposition.py
+```

@@ -1,0 +1,136 @@
+"""教育用・量子状態シミュレータ（numpy のみ）。
+
+ブラウザ（Pyodide/WASM）でも動くように、numpy と matplotlib だけで実装。
+このファイル自体はリファレンス用で、サイト内の各レッスンには
+「背景セル」として同コードが埋め込まれています。
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 基本ゲート（ユニタリ行列）
+H = np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)  # アダマール
+X = np.array([[0, 1], [1, 0]], dtype=complex)  # NOT ゲート
+Z = np.array([[1, 0], [0, -1]], dtype=complex)  # Z ゲート
+
+
+def init_state(n):
+    """n 量子ビットの初期状態 |00...0>"""
+    state = np.zeros(2**n, dtype=complex)
+    state[0] = 1
+    return state
+
+
+def apply1(state, gate, q):
+    """1 量子ビットゲート gate を qubit q に適用"""
+    n = int(np.log2(len(state)))
+    perm = [q] + [i for i in range(n) if i != q]
+    s = np.transpose(state.reshape([2] * n), perm)
+    s = (gate @ s.reshape(2, -1)).reshape([2] * n)
+    s = np.transpose(s, np.argsort(perm))
+    return s.reshape(-1)
+
+
+def apply_h(state, q):
+    return apply1(state, H, q)
+
+
+def apply_x(state, q):
+    return apply1(state, X, q)
+
+
+def apply_z(state, q):
+    return apply1(state, Z, q)
+
+
+def apply_cnot(state, c, t):
+    """制御 qubit c を元に、標的 qubit t を反転させる CNOT"""
+    n = int(np.log2(len(state)))
+    perm = [c, t] + [i for i in range(n) if i not in (c, t)]
+    s = np.transpose(state.reshape([2] * n), perm).reshape(4, -1)
+    s[[2, 3]] = s[[3, 2]]
+    s = np.transpose(s.reshape([2] * n), np.argsort(perm))
+    return s.reshape(-1)
+
+
+def measure_counts(state, shots=1024, seed=42):
+    """測定を shots 回くり返し、ビット列ごとの回数を返す"""
+    probs = np.abs(state) ** 2
+    probs = probs / probs.sum()  # 浮動小数点誤差対策で正規化
+    rng = np.random.default_rng(seed)
+    n = int(np.log2(len(state)))
+    counts = {}
+    for s in rng.choice(2**n, size=shots, p=probs):
+        bits = format(s, f"0{n}b")  # 左が qubit0（最上位）→ 順に qubit1, ...
+        counts[bits] = counts.get(bits, 0) + 1
+    return counts
+
+
+def plot_counts(counts, title="Measurement results"):
+    """測定カウントのヒストグラムを描く（※WASM描画のため文字は英字のみ）"""
+    keys = sorted(counts)
+    vals = [counts[k] for k in keys]
+    fig, ax = plt.subplots(figsize=(7, 3.8))
+    ax.bar(keys, vals, color=plt.cm.viridis(np.linspace(0.25, 0.85, len(keys))))
+    ax.set_title(title)
+    ax.set_xlabel("Outcome (bitstring)")
+    ax.set_ylabel("Counts")
+    ax.set_ylim(0, max(vals) * 1.2 + 1)
+    return fig
+
+
+def plot_state(state, title="State probabilities"):
+    """各ビット列の確率 |α|² を棒グラフで表示（※英字のみ）"""
+    probs = np.abs(state) ** 2
+    n = int(np.log2(len(state)))
+    keys = [format(i, f"0{n}b") for i in range(len(state))]
+    fig, ax = plt.subplots(figsize=(7, 3.8))
+    ax.bar(keys, probs, color=plt.cm.plasma(np.linspace(0.2, 0.9, len(keys))))
+    ax.set_title(title)
+    ax.set_xlabel("Bitstring (q0 is leftmost)")
+    ax.set_ylabel("Probability |a|^2")
+    ax.set_ylim(0, 1.1)
+    return fig
+
+
+def bloch_vector(state):
+    """1 量子ビット状態をブロッホベクトル (x, y, z) に変換"""
+    a, b = state
+    theta = 2 * np.arctan2(abs(b), abs(a))
+    phi = np.angle(b) - np.angle(a)
+    return np.array(
+        [np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)]
+    )
+
+
+def plot_bloch(state, title="Bloch sphere"):
+    """1 量子ビット状態をブロッホ球上に描く"""
+    v = bloch_vector(state)
+    fig = plt.figure(figsize=(4.6, 4.6))
+    ax = fig.add_subplot(111, projection="3d")
+    u = np.linspace(0, 2 * np.pi, 40)
+    w = np.linspace(0, np.pi, 40)
+    ax.plot_surface(
+        np.outer(np.sin(u), np.sin(w)),
+        np.outer(np.cos(u), np.sin(w)),
+        np.outer(np.ones(40), np.cos(w)),
+        color="lightgray",
+        alpha=0.35,
+        linewidth=0,
+    )
+    for vec, col in [([1, 0, 0], "red"), ([0, 1, 0], "green"), ([0, 0, 1], "blue")]:
+        ax.plot(
+            [-vec[0], vec[0]], [-vec[1], vec[1]], [-vec[2], vec[2]],
+            color=col, alpha=0.5,
+        )
+    ax.plot([0, v[0]], [0, v[1]], [0, v[2]], color="black", lw=2)
+    ax.scatter([v[0]], [v[1]], [v[2]], color="darkorange", s=80)
+    ax.set_title(title)
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    ax.set_zlim(-1, 1)
+    ax.set_box_aspect((1, 1, 1))
+    return fig

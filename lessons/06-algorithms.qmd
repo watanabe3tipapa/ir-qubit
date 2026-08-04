@@ -1,0 +1,148 @@
+---
+title: "レッスン6：量子アルゴリズム"
+description: "Deutsch-Jozsa（関数の判定）と Grover（検索）を、実際に回路を組んで体感する"
+pyproject: |
+  requires-python = ">=3.13"
+  dependencies = [
+    "numpy",
+    "matplotlib",
+  ]
+---
+# 量子アルゴリズム
+
+重ね合わせ・もつれ・干渉を組み合わせると、**古典コンピュータより速く解ける**問題が出てきます。
+最後のレッスンでは、代表的な 2 つのアルゴリズムを、実際に回路を組んで体感しましょう。
+
+| アルゴリズム | できること | 古典との差 |
+|---|---|---|
+| **Deutsch-Jozsa** | 関数が「定数」か「バランス」かを判定 | 古典 $2^{n-1}+1$ 回 → 量子 **1 回** |
+| **Grover** | データベースから目的の項目を探す | 古典 $O(N)$ → 量子 $O(\sqrt{N})$ |
+
+{{< include ../lib/sim_cell.qmd >}}
+
+## Deutsch-Jozsa：たった1回の質問で見抜く
+
+**問題**：$f$ は `0 → 0/1`、`1 → 0/1` の関数。$f$ が「**定数**」（$f(0)=f(1)$）か「**バランス**」（$f(0)\neq f(1)$）かを判定したい。
+
+古典では**最悪 2 回** 関数を呼ぶ必要があります。量子では、関数をブラックボックス（oracle）として **1 回だけ** 呼ぶだけで判定できます。
+
+仕組みを試しましょう。関数を選ぶと、上の回路を組んで測定します。**q0 の測定結果が `0` なら定数、`1` ならバランス**です。
+
+```python {.marimo}
+func_choice = mo.ui.dropdown(
+    options={
+        "const0": "f(x) = 0（定数）",
+        "const1": "f(x) = 1（定数）",
+        "bal_x": "f(x) = x（バランス）",
+        "bal_nx": "f(x) = 1⊕x（バランス）",
+    },
+    value="const0",
+    label="関数 f を選ぶ",
+)
+func_choice
+```
+
+```python {.marimo}
+def oracle(kind, s):
+    if kind == "const0":
+        return s
+    if kind == "const1":
+        return apply_x(s, 1)
+    if kind == "bal_x":
+        return apply_cnot(s, 0, 1)
+    return apply_cnot(apply_x(s, 1), 0, 1)  # bal_nx
+
+dj_state = init_state(2)
+dj_state = apply_x(dj_state, 1)                      # 補助 qubit1 を |1⟩ に
+dj_state = apply_h(dj_state, 0)
+dj_state = apply_h(dj_state, 1)
+dj_state = oracle(func_choice.value, dj_state)       # オラクルを 1 回だけ呼ぶ
+dj_state = apply_h(dj_state, 0)
+dj_counts = measure_counts(dj_state, shots=1024, seed=0)
+is_balanced = any(k[0] == "1" for k in dj_counts)
+mo.hstack([
+    plot_counts(dj_counts, title="Measurement of q0"),
+    mo.md(
+        f"**判定結果：{'バランス関数' if is_balanced else '定数関数'}**  "
+        f"（q0 が 1 ならバランス、0 なら定数）"
+    ),
+])
+```
+
+:::{.callout-tip}
+**見てみよう**
+- `f(x)=0` や `f(x)=1`（定数）を選ぶと、q0 は **必ず 0**。
+- `f(x)=x` や `f(x)=1⊕x`（バランス）を選ぶと、q0 は **必ず 1**。
+- 関数を 1 回だけ呼ぶだけで、古典の 2 回と同等以上の判定ができています。
+:::
+
+## Grover：データベースから一発で見つける
+
+4 個の箱（`00`〜`11`）の中から、目的の箱を探す問題を考えます。古典なら**平均 2〜3 回** 開けないといけませんが、
+Grover アルゴリズムは**1 ステップ**で確率をほぼ 100% に引き上げます。
+
+仕組みは「**目的の振幅を増幅**」すること：
+1. 全部の箱を重ね合わせにする
+2. **オラクル**で目的の箱の符号を反転
+3. **拡散（平均まわりの反転）**で、目的の箱の振幅を増幅
+4. 測定 → 目的の箱が出やすい！
+
+```python {.marimo}
+target = mo.ui.dropdown(
+    options={"00": "00", "01": "01", "10": "10", "11": "11"},
+    value="11",
+    label="探したい箱（ターゲット）を選ぶ",
+)
+target
+```
+
+```python {.marimo}
+t = int(target.value, 2)  # ターゲットのインデックス
+g_state = init_state(2)
+g_state = apply_h(g_state, 0)
+g_state = apply_h(g_state, 1)
+
+# オラクル：|ターゲット⟩ だけ符号を反転（ターゲットを |11⟩ に移して CZ）
+t0, t1 = (t >> 1) & 1, t & 1
+if t0 == 0:
+    g_state = apply_x(g_state, 0)
+if t1 == 0:
+    g_state = apply_x(g_state, 1)
+g_state = apply_h(g_state, 1)
+g_state = apply_cnot(g_state, 0, 1)
+g_state = apply_h(g_state, 1)
+if t0 == 0:
+    g_state = apply_x(g_state, 0)
+if t1 == 0:
+    g_state = apply_x(g_state, 1)
+
+# 拡散（平均まわりの反転）
+g_state = apply_h(g_state, 0); g_state = apply_h(g_state, 1)
+g_state = apply_x(g_state, 0); g_state = apply_x(g_state, 1)
+g_state = apply_h(g_state, 1); g_state = apply_cnot(g_state, 0, 1); g_state = apply_h(g_state, 1)
+g_state = apply_x(g_state, 0); g_state = apply_x(g_state, 1)
+g_state = apply_h(g_state, 0); g_state = apply_h(g_state, 1)
+
+g_counts = measure_counts(g_state, shots=2048, seed=0)
+plot_state(g_state, title=f"Target |{target.value}> searched (1 step)")
+```
+
+```python {.marimo}
+g_counts2 = measure_counts(g_state, shots=2048, seed=0)
+plot_counts(g_counts2, title=f"Measurement: target |{target.value}> dominates")
+```
+
+:::{.callout-tip}
+**見てみよう**
+- どのターゲットを選んでも、測定すると**ほぼ必ずその箱**が出ます。
+- 「振幅の増幅」によって、4 箱の中から **1 ステップ** で特定できるのが Grover の力です。
+- 箱の数が 100 万個になっても、Grover は古典の $\sqrt{N}$ 倍速（約 1,000 回）で探せます。
+:::
+
+## まとめ
+
+- **Deutsch-Jozsa**：定数/バランス判定を **1 回のクエリ**で行う。
+- **Grover**：検索を $O(\sqrt{N})$ で行う「振幅増幅」アルゴリズム。
+- 両者に共通するのは「**重ね合わせで可能性を広げ、干渉で目的の振幅を増幅する**」という量子の力。
+
+これで 6 レッスンは完了です。あとは **ワークシート** で復習し、「自分のPCで試す」ページの Qiskit ノートブックで、実際の量子 SDK にも触れてみましょう。

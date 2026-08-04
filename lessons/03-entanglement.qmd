@@ -1,0 +1,76 @@
+---
+title: "レッスン3：エンタングルメント"
+description: "CNOTゲートで作る「量子もつれ」。測定すると相手の結果が即座に決まる不思議を体験する"
+pyproject: |
+  requires-python = ">=3.13"
+  dependencies = [
+    "numpy",
+    "matplotlib",
+  ]
+---
+# エンタングルメント（量子もつれ）
+
+2 つの Qubit が **「手をつないで」** いる状態を **エンタングルメント（量子もつれ）** といいます。
+この 2 つの Qubit は、**一方を測ると、たとえ遠く離れていても、もう一方の状態が即座に決まる**という不思議な性質を持ちます。
+
+## ベル状態
+
+2 つの Qubit を次の回路のように組むと、**ベル状態**という「もつれた」状態ができます。
+計算結果は `00` と `11` の**どちらか**だけ。決して `01` や `10` にはなりません。
+
+{{< include ../lib/sim_cell.qmd >}}
+
+```python {.marimo}
+shots = mo.ui.slider(100, 4096, value=1024, step=32, label="測定回数（shots）", full_width=True)
+shots
+```
+
+```python {.marimo}
+state = init_state(2)          # |00⟩
+state = apply_h(state, 0)      # qubit0 に H をかけて重ね合わせ
+state = apply_cnot(state, 0, 1)  # qubit1 を qubit0 でもつれさせる（CNOT）
+plot_state(state, title="Bell state 1/sqrt(2)(|00> + |11>)")
+```
+
+```python {.marimo}
+counts = measure_counts(state, shots=shots.value, seed=0)
+plot_counts(counts, title=f"Bell measurement ({shots.value} shots)")
+```
+
+:::{.callout-tip}
+**見てみよう**
+- ヒストグラムの棒は **`00` と `11` だけ**。`01` や `10` は一切出ません。
+- つまり「2 つのコインは **両方とも表** か **両方とも裏**」のどちらか。**必ず同じ向き**です。
+- 測定回数を増やすと、`00` と `11` の回数がどんどん **50%:50%** に近づきます。
+:::
+
+## 「手をつないだコイン」のシミュレーション
+
+紙コインの実験を、数値で再現しましょう。
+2 枚のコインを「**必ず裏表が逆**になるように」結びつけた状態を用意します。
+
+この例では、**qubit0 と qubit1 は常に「逆」向き**、つまり `01` と `10` しか出ません。
+
+```python {.marimo}
+reverse = mo.ui.button(label="ペアコインを見る（一方だけ測定）")
+reverse
+```
+
+```python {.marimo}
+state2 = 2**-0.5 * np.array([0, 1, 1, 0], dtype=complex)  # 1/√2(|01⟩ + |10⟩)
+counts2 = measure_counts(state2, shots=1024)
+plot_counts(counts2, title="Pair coins (always opposite): knowing one fixes the other")
+```
+
+:::{.callout-note}
+片方のコインが「表(`0`)」だったら、もう片方（遠くにあっても！）は**必ず「裏(`1`)」**。
+量子コンピュータでは、こうした結びつきが計算を高速化する「道具」になります。
+:::
+
+## まとめ
+
+- **エンタングルメント**は、複数の Qubit が「手をつないで」、測定が互いに即座に影響し合う状態。
+- もつれた 2 つは、**必ず『同じ』か『逆』**という関係を持つ。
+- アインシュタインが「不気味な遠隔作用（spooky action at a distance）」と呼んだ現象。
+
+次は、量子計算の基本操作である **量子ゲート** を整理しながら、X・Z・CNOT の働きを詳しく見ます。

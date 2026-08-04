@@ -1,0 +1,86 @@
+---
+title: "レッスン4：量子ゲート入門"
+description: "H・X・Z・CNOT の働きを、自由に組み合わせて実験できるゲーム感覚のレッスン"
+pyproject: |
+  requires-python = ">=3.13"
+  dependencies = [
+    "numpy",
+    "matplotlib",
+  ]
+---
+# 量子ゲート入門
+
+量子計算は、Qubit に **ゲート（状態を変える操作）** をかけていくことで進みます。
+代表的なゲートは次の 4 つ。まずは一覧で整理しましょう。
+
+| ゲート | 記号 | 働き（直感的な意味） |
+|---|---|---|
+| アダマール | **H** | コインを「回す」。重ね合わせを作る |
+| NOT | **X** | 表↔裏を反転させる（`0↔1`） |
+| Z | **Z** | 位相を反転（`1` の符号を変える） |
+| CNOT | **CNOT** | 「もし相手が `1` なら反転」。もつれを作る |
+
+{{< include ../lib/sim_cell.qmd >}}
+
+## ゲーム感覚でゲートを実験
+
+ゲートを**自由に選んで**順番に適用し、状態がどう変わるか見てみましょう。
+
+```python {.marimo}
+gate_seq = mo.ui.multiselect(["H", "X", "Z"], value=["H"], label="1量子ビット・ゲートを選ぶ（順に適用）", full_width=True)
+gate_seq
+```
+
+```python {.marimo}
+state = np.array([1, 0], dtype=complex)
+for g in gate_seq.value:
+    if g == "H":
+        state = apply_h(state, 0)
+    elif g == "X":
+        state = apply_x(state, 0)
+    elif g == "Z":
+        state = apply_z(state, 0)
+seq = " → ".join(gate_seq.value) if gate_seq.value else "（ゲートなし）"
+mo.hstack([
+    plot_state(state, title=f"Applied gate: {seq}"),
+    plot_counts(measure_counts(state, shots=4096), title="Measurement"),
+], widths=[0.5, 0.5])
+```
+
+:::{.callout-tip}
+**試してみよう**
+- **X を 2 回** かけると元に戻る（`|0⟩ → |1⟩ → |0⟩`）。
+- **H → H** でも元に戻る（重ね合わせの干渉）。
+- **H → X → H** はどうなる？ 不思議な結果が待っています。
+- **H → Z → H** も比べてみましょう。
+:::
+
+## 回路図での表現
+
+量子コンピュータの回路は、**上から qubit0, qubit1…** の順に横線を引き、ゲートを四角で置いて書きます。
+`H` や `X` はその qubit の線に置き、CNOT は**制御**（黒丸）と**標的**（＋印）を縦線で結びます。
+
+## CNOT の復習：もう一方を「コピー」
+
+CNOT は「**制御 qubit が `1` のときだけ、標的 qubit を反転**」します。
+これを使うと、もつれ（レッスン3）や、計算の中核となる操作が作れます。
+
+```python {.marimo}
+cnot_demo = mo.ui.button(label="CNOT をかけてみる（|10⟩ → ?）")
+cnot_demo
+```
+
+```python {.marimo}
+cnot_state = init_state(2)
+cnot_state = apply_x(cnot_state, 0)          # |00⟩ → |10⟩（qubit0 が 1 になる）
+cnot_state = apply_cnot(cnot_state, 0, 1)    # qubit0 が 1 なので qubit1 が反転 → |11⟩
+plot_state(cnot_state, title="|10> --CNOT--> |11> (target flips if control=1)")
+```
+
+## まとめ
+
+- **X** は反転、**H** は重ね合わせ、**Z** は位相、**CNOT** は「条件付き反転」。
+- ゲートは**ユニタリ変換**＝すべて元に戻せる操作（不可逆な計算がない）。
+- 回路図は「上から qubit、線の上にゲート」で表す。
+
+次は、確率をデータとして読む「**測定と確率**」を詳しく見ます。
