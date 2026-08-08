@@ -20,7 +20,7 @@ website:
     left: "CC BY 4.0 — 量子コンピュータ入門キット"
     right: "Quarto × marimo"
   navbar:
-    title: "量子入門キット"
+    title: "量子コンピュータ入門キット"
     left:
       - text: "ホーム"
         file: index.qmd
