@@ -38,6 +38,18 @@ website:
             file: lessons/05-measurement.qmd
           - text: "6. 量子アルゴリズム"
             file: lessons/06-algorithms.qmd
+          - text: "7. 複数量子ビットとテンソル積"
+            file: lessons/07-multiqubit.qmd
+          - text: "8. 量子ゲートの拡張"
+            file: lessons/08-more-gates.qmd
+          - text: "9. 量子回路の読み方・書き方"
+            file: lessons/09-circuits.qmd
+          - text: "10. 量子アルゴリズム定番（続き）"
+            file: lessons/10-advanced-algorithms.qmd
+          - text: "11. ノイズと誤り訂正"
+            file: lessons/11-noise.qmd
+          - text: "12. 応用と将来展望"
+            file: lessons/12-applications.qmd
       - text: "ワークシート"
         file: worksheets.qmd
       - text: "自分のPCで試す"

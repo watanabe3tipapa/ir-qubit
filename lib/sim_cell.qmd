@@ -7,7 +7,10 @@ import matplotlib.pyplot as plt
 # 基本ゲート（ユニタリ行列）
 H = np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)  # アダマール
 X = np.array([[0, 1], [1, 0]], dtype=complex)  # NOT ゲート
+Y = np.array([[0, -1j], [1j, 0]], dtype=complex)  # Y ゲート（X・Z と合わせて Pauli）
 Z = np.array([[1, 0], [0, -1]], dtype=complex)  # Z ゲート
+S = np.array([[1, 0], [0, 1j]], dtype=complex)  # S ゲート（Z の平方根、90°の位相）
+T = np.array([[1, 0], [0, np.exp(1j * np.pi / 4)]], dtype=complex)  # T ゲート（S の平方根、45°の位相）
 
 def init_state(n):
     """n 量子ビットの初期状態 |00...0>"""
@@ -30,8 +33,17 @@ def apply_h(state, q):
 def apply_x(state, q):
     return apply1(state, X, q)
 
+def apply_y(state, q):
+    return apply1(state, Y, q)
+
 def apply_z(state, q):
     return apply1(state, Z, q)
+
+def apply_s(state, q):
+    return apply1(state, S, q)
+
+def apply_t(state, q):
+    return apply1(state, T, q)
 
 def apply_cnot(state, c, t):
     """制御 qubit c を元に、標的 qubit t を反転させる CNOT"""
@@ -39,6 +51,21 @@ def apply_cnot(state, c, t):
     perm = [c, t] + [i for i in range(n) if i not in (c, t)]
     s = np.transpose(state.reshape([2] * n), perm).reshape(4, -1)
     s[[2, 3]] = s[[3, 2]]
+    s = np.transpose(s.reshape([2] * n), np.argsort(perm))
+    return s.reshape(-1)
+
+def apply_swap(state, a, b):
+    """SWAP ゲート：qubit a と qubit b の状態を入れ替える"""
+    s = apply_cnot(state, a, b)
+    s = apply_cnot(s, b, a)
+    return apply_cnot(s, a, b)
+
+def apply_ccnot(state, c1, c2, t):
+    """CCNOT（Toffoli）ゲート：c1 も c2 も 1 のときだけ t を反転"""
+    n = int(np.log2(len(state)))
+    perm = [c1, c2, t] + [i for i in range(n) if i not in (c1, c2, t)]
+    s = np.transpose(state.reshape([2] * n), perm).reshape(8, -1)
+    s[[6, 7]] = s[[7, 6]]
     s = np.transpose(s.reshape([2] * n), np.argsort(perm))
     return s.reshape(-1)
 

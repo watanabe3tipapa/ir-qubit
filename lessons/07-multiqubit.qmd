@@ -1,0 +1,108 @@
+---
+title: "レッスン7：複数量子ビットとテンソル積"
+description: "2 qubit 以上の書き方と、ゲートを同時にかけるテンソル積の感覚を身につける"
+pyproject: |
+  requires-python = ">=3.13"
+  dependencies = [
+    "numpy",
+    "matplotlib",
+  ]
+---
+# 複数量子ビットとテンソル積
+
+ここまでは 1 つの Qubit を扱ってきました。本物の量子コンピュータは、**何千もの Qubit** を一斉に扱います。
+そのために必要な「**複数の Qubit の書き方**」と、ゲートを同時にかける「**テンソル積**」のイメージを身につけましょう。
+
+## 複数量子ビットの表記
+
+1 Qubit の状態は `|0⟩` と `|1⟩` で書きました。2 Qubit なら、**左が qubit0、右が qubit1** として 4 種類あります。
+
+| 表記 | qubit0 | qubit1 | インデックス |
+|---|---|---|---|
+| \|00⟩ | 0 | 0 | 0 |
+| \|01⟩ | 0 | 1 | 1 |
+| \|10⟩ | 1 | 0 | 2 |
+| \|11⟩ | 1 | 1 | 3 |
+
+`|10⟩` は「qubit0 が 1、qubit1 が 0」の意味です。このキットでは **左が qubit0**（最上位）という約束でしたね。
+
+{{< include ../lib/sim_cell.qmd >}}
+
+## テンソル積：ゲートをまとめてかける感覚
+
+2 つの Qubit に**それぞれ別のゲートを同時に**かける操作を**テンソル積** $\otimes$ といいます。
+記号だけ見ると難しそうですが、意味はシンプルです。
+
+> `H ⊗ H（2量子ビットに同時に H）` ＝ **2 枚のコインを同時に回す**
+
+1 枚だけ回すの（`H ⊗ I`）との違いを、状態ベクトルで観察してみましょう。
+
+```python {.marimo}
+choice = mo.ui.radio(
+    options={
+        "h0": "H ⊗ I（qubit0 だけ回す）",
+        "hh": "H ⊗ H（両方回す）",
+    },
+    value="h0",
+    label="操作を選ぶ",
+)
+choice
+```
+
+```python {.marimo}
+s = init_state(2)
+if choice.value == "h0":
+    s = apply_h(s, 0)
+    title = "H(x) on q0  -> (|00> + |10>)/sqrt(2)"
+else:
+    s = apply_h(s, 0)
+    s = apply_h(s, 1)
+    title = "H(x)H on both -> (|00>+|01>+|10>+|11>)/2"
+plot_state(s, title=title)
+```
+
+```python {.marimo}
+c = measure_counts(s, shots=2048, seed=0)
+plot_counts(c, title="Measurement")
+```
+
+:::{.callout-tip}
+**見てみよう**
+- **H ⊗ I** では qubit0 だけが重ね合わせ → 出るのは `00` と `10` だけ。
+- **H ⊗ H** では **4 通りすべて**を約 25% ずつで観察できます。
+- 「両方同時に回す」ことで、**4 つの可能性を同時に並べられる**。これが量子の並列性の土台です。
+:::
+
+## 3 Qubit 以上に広げる
+
+同じ規則で 3 Qubit は `|000⟩…|111⟩` の**8 通り**、n Qubit なら $2^n$ 通りになります。
+
+**Qubit 数を 1 増やすと、可能性の数は 2 倍**。これが「指数関数的に広がる状態空間」です。
+例えば 30 Qubit なら $2^{30} \approx 10$ 億通りの状態を同時に扱えます。
+
+```python {.marimo}
+nq = mo.ui.slider(1, 10, value=2, step=1, label="Qubit 数（n）", full_width=True)
+nq
+```
+
+```python {.marimo}
+s3 = init_state(nq.value)
+s3 = apply_h(s3, 0)
+for q in range(nq.value):
+    if q > 0:
+        s3 = apply_cnot(s3, 0, q)
+plot_state(s3, title=f"3+ qubit (H + CNOTs on {nq.value} qubits)")
+```
+
+:::{.callout-note}
+$2^n$ 通りの**波形が並ぶ**感覚をつかんでください。n を増やすと棒がどんどん増えていくのが見えます。
+（※こうした状態は「巨大な波の重ね合わせ」で、全 Qubit が 0 でも 1 でも「同時」に存在しています。）
+:::
+
+## まとめ
+
+- 複数 Qubit は `|q0 q1 q2…⟩` と、$2^n$ 通りのビット列で表す。
+- **テンソル積 ⊗** は「ゲートをまとめてかける」こと。`H ⊗ H` で全部を同時に重ね合わせられる。
+- n Qubit で可能性は $2^n$ 倍に広がる。ここが量子計算のパワーの源泉。
+
+次は、さらに多種の **量子ゲート** を導入します。

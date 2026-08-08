@@ -1,0 +1,95 @@
+---
+title: "レッスン12：応用と将来展望"
+description: "暗号・化学・最適化・機械学習。量子コンピュータの実用化がもたらす未来を考える"
+pyproject: |
+  requires-python = ">=3.13"
+  dependencies = [
+    "numpy",
+    "matplotlib",
+  ]
+---
+# 応用と将来展望
+
+これまでの 11 レッスンで、Qubit・ゲート・アルゴリズム・ノイズを学びました。
+最後は、それらの技術が**どんな実社会の問題**に応用されるのか、現状と未来観を整理します。
+
+{{< include ../lib/sim_cell.qmd >}}
+
+## 1. 暗号とセキュリティ
+
+| 影響 | 内容 |
+|---|---|
+| **RSA 暗号の危機** | Shor のアルゴリズム（レッスン10）で素因数分解が可能になると、安全が崩れる可能性 |
+| **量子暗号（QKD）** | 盗聴すると**通信が乱れる**性質を利用した「盗聴できない暗号」 |
+| **耐量子暗号（PQC）** | 量子でも解読が難しいとされる**新しい暗号方式**に移行する動き |
+
+```python {.marimo}
+years = np.array([5, 8, 12, 16, 20, 25, 30])
+# イメージ：桁数が増えても、量子（Shor）の手間はゆるやかにしか増えない（対数目盛りの例）
+shor_steps = [2**y / 2**18 for y in years]
+fig_shor, ax_shor = plt.subplots(figsize=(7, 3.4))
+ax_shor.plot(years, shor_steps, color="tab:red", marker="o", ms=4)
+ax_shor.set_yscale("log")
+ax_shor.set_title("Shor's algorithm: effort stays small as number grows")
+ax_shor.set_xlabel("Digits of N")
+ax_shor.set_ylabel("Relative effort (classical vs quantum, schematic)")
+ax_shor.grid(which="both", ls="--", alpha=0.4)
+fig_shor
+```
+
+:::{.callout-note}
+「かける手間（工数）が、数字の桁数に応じて**ゆるやかしか増えない**」ことが、RSA にとって致命的なインパクトになります。
+世界標準は**量子安全な暗号（PQC）への移行**へ向かっています。
+:::
+
+## 2. 量子化学・材料設計
+
+分子の電子状態を精度よく計算するのは、古典計算機では **手数が指数関数的** に爆発します。
+量子コンピュータは**電子状態をそのまま重ね合わせに載せられる**ため、効率よく計算できると期待されています。
+
+- **新素材**：電池・触媒・超伝導体の分子設計
+- **医薬**：タンパク質の構造や、薬と分子の相互作用の解析
+- 現在は VQE（レッスン10）などで**小規模な分子**まで攻略中
+
+## 3. 最適化問題（QAOA）
+
+「何を選ぶのが一番良いか」を、量子を使って求めるアプローチが **QAOA** です。
+
+- **物流**：配送ルートの組み合わせ最適化
+- **金融**：ポートフォリオの最適化
+- **実務**：シフト表・回路設計
+
+古典の近似手法より良い答えを、量子の重ね合わせで探す工夫が研究されています。
+
+## 4. 機械学習と量子（量子機械学習）
+
+**QML（Quantum Machine Learning）** は、量子回路をニューラルネットのように使う研究領域です。
+
+```python {.marimo}
+x = np.linspace(-3, 3, 200)
+y0 = np.sin(0.9 * x) * np.exp(-0.15 * x**2)
+y1 = np.cos(1.3 * x) * np.exp(-0.15 * x**2)
+fig_qml, ax_qml = plt.subplots(figsize=(7, 3.4))
+ax_qml.plot(x, y0, label="classical feature", color="tab:blue")
+ax_qml.plot(x, y1, label="quantum kernel", color="tab:orange", ls="--")
+ax_qml.set_title("QML: quantum feature map wraps data into higher-dim space")
+ax_qml.set_xlabel("x")
+ax_qml.set_ylabel("Feature value")
+ax_qml.legend(fontsize=8)
+fig_qml
+```
+
+> データを**高い次元の空間**に量子の力で展開することで、古典では分けにくいデータも **一直線に分けやすく** なる、というイメージです。
+
+## まとめ：量子コンピュータのロードマップ
+
+| 年（想定） | ステージ | できること |
+|---|---|---|
+| 現在 | **NISQ 時代** | 実験・VQE・QAOA の研究 |
+| 数年後 | **誤り訂正の実証** | 小さい問題を確実に解く |
+| 10年以上後 | **誤り耐性（FTQC）** | シミュレーション・最適化・QML |
+
+- 量子は「**計算の速さ**」だけでなく、**暗号・化学・材料・AI** と社会を広く変えていきます。
+- いまはその「実験室の時代」。あなたの学んだ基礎は、その入り口に立っています。
+
+このキットで学んだ **重ね合わせ・もつれ・干渉・確率** は、量子コンピュータの「共通言語」です。これからの新しい技術を追いかける土台になれば嬉しいです。おつかれさまでした！

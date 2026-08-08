@@ -1,0 +1,136 @@
+---
+title: "レッスン10：量子アルゴリズムの定番（続き）"
+description: "Shor・量子フーリエ変換・位相推定・VQE の考え方を、図と数値デモで俯瞰する"
+pyproject: |
+  requires-python = ">=3.13"
+  dependencies = [
+    "numpy",
+    "matplotlib",
+  ]
+---
+# 量子アルゴリズムの定番（続き）
+
+レッスン6で Deutsch-Jozsa と Grover を体験しました。ここでは「入門キットの続篇」として、
+実際の量子研究で重要な **4 つの定番** を、数式の細部に踏み込まず全体的に眺めましょう。
+
+| アルゴリズム | 意味するところ | 応用 |
+|---|---|---|
+| **Shor** | 素因数分解を爆速に | RSA 暗号の危機、量子計算の発端 |
+| **QFT（量子フーリエ変換）** | 周期を見抜く「波の分析器」 | Shor など周期検出の部品 |
+| **QPE（量子位相推定）** | 隠れた（固有）位相を精密に読む | 化学計算・材料計算の基礎 |
+| **VQE** | 量子＋古典でエネルギーを最適化 | 量子化学シミュレーション |
+
+{{< include ../lib/sim_cell.qmd >}}
+
+## Shor：素因数分解で変えた計算の地平
+
+インターネットの暗号 **RSA** は「大きな数を素因数分解するのは**計算機でも何億年もかかる**」ことを信頼しています。
+
+Shor のアルゴリズムは、これを量子の力で **多項式時間（$O(L^3)$ 程度）** に落とす方法です。
+カギは「**周期が見つかれば因数分解できる**」という数論の事実を、量子の重ね合わせで利用すること。
+
+> 波の繰り返し（周期）を高速に見つける → その周期から素因数を計算する
+
+RSA の原理が動揺したことから、量子コンピュータが世界的に注目されるきっかけになりました。
+
+## QFT：波の周期を「読む」
+
+量子フーリエ変換（QFT）は、重ね合わせ状態の中の **周期** を読み取る操作です。
+下のデモは、ある周期 `k` を持つ「波状の振幅」を可視化したものです。QFT はこの波の周期を読み取り、ビット列として出力します。
+
+```python {.marimo}
+Np = mo.ui.slider(2, 16, value=8, step=1, label="波の長さ（basis 数）", full_width=True)
+k_sel = mo.ui.slider(1, 7, value=3, step=1, label="隠れた周期 k", full_width=True)
+mo.hstack([Np, k_sel])
+```
+
+```python {.marimo}
+Np_val = Np.value
+k_val = k_sel.value % Np_val
+amps = np.exp(2j * np.pi * k_val * np.arange(Np_val) / Np_val) / np.sqrt(Np_val)
+probs = np.abs(amps) ** 2
+fig_qft, ax_qft = plt.subplots(figsize=(7, 3.4))
+ax_qft.bar(range(Np_val), probs, color=plt.cm.viridis(np.linspace(0.3, 0.8, Np_val)))
+ax_qft.axhline(probs.mean(), color="red", ls="--", lw=1.5, label="flat (no period info)")
+ax_qft.set_title(f"Periodic phases (amplitudes uniform after QFT picks period {k_val})")
+ax_qft.set_xlabel("Basis index j")
+ax_qft.set_ylabel("Probability")
+ax_qft.legend(fontsize=8)
+fig_qft
+```
+
+:::{.callout-note}
+**何がすごい？**
+この「波の繰り返し」は、測らなくても周期 $k$ の情報を持っています。QFT はその周期を
+**少数回の測定で安定に読み出せる**よう、重ね合わせを「波の山」に変換するのが役割です。
+この「波の見抜く力」が、Shor アルゴリズムの周期検出などで使われます。
+:::
+
+## QPE：隠れた位相を読む「物差し」
+
+**量子位相推定（QPE）** は、ある演算が状態をどのくらい回転させるか（**固有位相**）を、量子ビットのビット列として読み取る手法です。
+
+QPE は QFT を最後に使う構成が典型です。
+
+```python {.marimo}
+theta_q = 0.6            # 探したい位相の量（固有位相）
+N_q = 6                  # 読み取り qubit 数（イメージ）
+qr_rots = [np.exp(1j * theta_q * 2**r) for r in range(N_q)]
+fig_qpe, ax_qpe = plt.subplots(figsize=(7, 3.4))
+ax_qpe.stem(range(N_q), [v.real for v in qr_rots], linefmt="tab:blue", markerfmt=".", basefmt="gray")
+ax_qpe.axhline(0, color="gray", lw=0.8)
+ax_qpe.set_title("QPE: controlled rotations with angle theta; QFT turns them into bits")
+ax_qpe.set_xlabel("Control qubit r")
+ax_qpe.set_ylabel("Re (phase factor)")
+fig_qpe
+```
+
+> 概念は「角度を測る物差し」の重ね合わせ。複数の qubit の位相のずれを、QFT で **0 と 1 のビット列** に変換します。化学分子のエネルギー計算などに欠かせません。
+
+## VQE：量子化学・分子のエネルギー推定
+
+**VQE（Variational Quantum Eigensolver）** は、量子回路と古典最適化を組み合わせて、
+分子の（基底）エネルギーを求める方式です。
+
+| 手順 | 内容 |
+|---|---|
+| ① | 量子回路で「試しの分子状態」を準備 |
+| ② | エネルギーを測定 |
+| ③ | 古典 CPU がパラメータを微調整 |
+| ④ | ②③を繰り返し、最小エネルギーに収束 → 完成 |
+
+```python {.marimo}
+v_steps = mo.ui.slider(1, 30, value=1, step=1, label="VQE の最適化ステップ数", full_width=True)
+v_steps
+```
+
+```python {.marimo}
+rngv = np.random.default_rng(0)
+est = [3.0, 2.4, 1.9, 1.55, 1.3, 1.15, 1.05, 0.98, 0.93, 0.88]
+est = est + [max(0.72, est[-1] - 0.03 * (i - 9)) for i in range(10, 30)]
+target_e = 0.7
+fig_vqe, ax_vqe = plt.subplots(figsize=(7, 3.4))
+ax_vqe.plot(range(1, 31), est, color="tab:blue", marker="o", ms=4, label="VQE estimate")
+ax_vqe.axhline(target_e, color="red", ls="--", lw=1.5, label="true ground energy (approx)")
+ax_vqe.set_xlim(1, 31)
+ax_vqe.set_xticks(range(1, 31, 5))
+ax_vqe.set_title("VQE: energy decreases toward the true ground energy")
+ax_vqe.set_xlabel("Optimization step")
+ax_vqe.set_ylabel("Energy")
+ax_vqe.legend(fontsize=8)
+fig_vqe
+```
+
+:::{.callout-tip}
+**スライダーで「学習」を再生**
+ステップを増やすと、見積もりエネルギーが正解値（赤線）に近づいていく様子を動的に見られます。
+:::
+
+## まとめ
+
+- **Shor**：素因数分解を周期検出に帰着し、RSA の根拠を揺るがす。
+- **QFT**：重ね合わせの中の周期を読み取る「分析器」。
+- **QPE**：QFT を使って隠れた固有位相をビット列に変換する基本技術。
+- **VQE**：量子＋古典の最適化で分子エネルギー推定。量子化学への入り口。
+
+次は実機の問題、**ノイズと誤り訂正** を見ます。

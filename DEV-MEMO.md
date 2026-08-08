@@ -51,7 +51,13 @@ ir-qubit/
 │   ├── 03-entanglement.qmd   # エンタングルメント
 │   ├── 04-gates.qmd          # 量子ゲート入門
 │   ├── 05-measurement.qmd    # 測定と確率
-│   └── 06-algorithms.qmd     # 量子アルゴリズム（Deutsch-Jozsa / Grover）
+│   ├── 06-algorithms.qmd     # 量子アルゴリズム（Deutsch-Jozsa / Grover）
+│   ├── 07-multiqubit.qmd     # 複数量子ビットとテンソル積
+│   ├── 08-more-gates.qmd     # 量子ゲートの拡張（Y・S・T / SWAP / Toffoli）
+│   ├── 09-circuits.qmd       # 量子回路の読み方・書き方（ベル / GHZ）
+│   ├── 10-advanced-algorithms.qmd  # Shor / QFT / QPE / VQE
+│   ├── 11-noise.qmd          # ノイズと誤り訂正（NISQ）
+│   └── 12-applications.qmd   # 応用と将来展望
 ├── worksheets.qmd            # ワークシート（印刷用）
 ├── notebooks/                # ローカル実行用 qiskit 版 marimo
 │   ├── 01_qubit_superposition.py
@@ -64,7 +70,7 @@ ir-qubit/
 ## シミュレータ仕様（背景セルに埋め込む）
 
 - `2^n` 次元の複素ベクトルで量子状態を保持（状態ベクトルシミュレーション）
-- ゲート: H, X, Z, CNOT（ユニタリ行列を適用）
+- ゲート: H, X, Y, Z, S, T, CNOT, SWAP, Toffoli（各ユニタリ行列を適用）
 - 測定: 確率分布 `|amplitude|^2` から shots 回サンプリング → ヒストグラム
 - 状態表示: 振幅の大きさを棒グラフ / コインの喩えで表示
 
@@ -78,7 +84,9 @@ ir-qubit/
 - [x] LP（index.qmd）
 - [x] ローカル実行用 qiskit ノートブック2本
 - [x] GitHub Pages workflow + README
-- [x] `quarto render` / `quarto preview` で動作確認（全9ページ生成、HTTP 200）
+- [x] `quarto render` / `quarto preview` で動作確認（全15ページ生成、HTTP 200）
+- [x] レッスン7〜12 追加（複数Qubit / ゲート拡張 / 回路読み書き / 定番アルゴリズム / ノイズ / 応用）
+- [x] ワークシートを 12 レッスン対応に拡張（Q11〜Q16、実験4・5）
 
 ## 実装時の発見（重要）
 

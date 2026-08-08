@@ -1,0 +1,133 @@
+---
+title: "レッスン8：量子ゲートの拡張"
+description: "Y・S・Tの位相ゲートと、SWAP・Toffoliゲートで広がる計算の可能性を体験する"
+pyproject: |
+  requires-python = ">=3.13"
+  dependencies = [
+    "numpy",
+    "matplotlib",
+  ]
+---
+# 量子ゲートの拡張：Y・S・T・SWAP・Toffoli
+
+レッスン4では H・X・Z・CNOT の 4 つを学びました。実は量子コンピュータには、さらにたくさんのゲートがあります。
+今回は **位相を操るゲート（Y・S・T）** と、**Qubit 同士の並べ替え・条件付きゲート（SWAP・Toffoli）** を見ていきましょう。
+
+## ゲートの新しい仲間たち
+
+| ゲート | 記号 | 働き（直感的な意味） |
+|---|---|---|
+| Y ゲート | **Y** | Pauli 3 兄弟の 1 つ。X・Z と合わせて「まわる」基本操作 |
+| S ゲート | **S** | 位相を 90° 回す。Z の平方根 |
+| T ゲート | **T** | 位相を 45° 回す。S の平方根 |
+| SWAP | **SWAP** | 2 つの Qubit の「入れ物」を取り替える |
+| Toffoli | **CCNOT** | 「もし 2 つの制御が両方 1 なら反転」。可逆な AND を実現 |
+
+{{< include ../lib/sim_cell.qmd >}}
+
+まずは Y・S・T を `|0⟩` にかけて、**測定結果（確率）** ではなく **状態そのもの** の変化を見てみましょう。
+位相ゲートは確率を変えず、**状態ベクトルの向き（位相）だけ**を変えます。
+
+```python {.marimo}
+gate_kind = mo.ui.radio(
+    options={
+        "y": "Y ゲート",
+        "s": "S ゲート（90°位相）",
+        "t": "T ゲート（45°位相）",
+    },
+    value="y",
+    label="かけるゲートを選ぶ",
+)
+gate_kind
+```
+
+```python {.marimo}
+sg = np.array([1, 0], dtype=complex)
+if gate_kind.value == "y":
+    sg = apply_y(sg, 0)
+    name = "Y"
+elif gate_kind.value == "s":
+    sg = apply_s(sg, 0)
+    name = "S"
+else:
+    sg = apply_t(sg, 0)
+    name = "T"
+mo.hstack([
+    plot_bloch(sg, title=f"Bloch sphere after {name}"),
+    plot_state(sg, title=f"State after {name} (probabilities unchanged)"),
+], widths=[0.45, 0.55])
+```
+
+:::{.callout-tip}
+**見てみよう**
+- S・T をかけても確率（棒グラフ）は**ゼロのまま**。でもブロッホ球の「平面の向き」が回っています。
+- **位相 = 波のタイミングのズレ**。目には見えなくても、Qubit 同士を重ね合わせると結果に効いてきます。
+:::
+
+## Y・S・T と「可逆計算」のイメージ
+
+X・Y・Z は **Pauli ゲート**、S・T は **位相ゲート** と呼ばれます。
+重要なのは、これらはすべて**元に戻せる（可逆）**ことです。
+
+| 操作 | 2 回繰り返すと |
+|---|---|
+| X | 元に戻る |
+| Y | 元に戻る |
+| Z | 元に戻る |
+| S | Z になる |
+| T | S になる |
+
+ゲートをかけたら必ず**逆操作**で戻せる。この「**不可逆な計算をしない**」性質が、量子計算のルールです。
+
+## Toffoli ゲート：2 つで 1 つを制御
+
+CNOT は「制御 1 つ → 標的 1 つ」。**Toffoli（CCNOT）** は「制御 2 つ → 標的 1 つ」で、
+**両方の制御が `1` のときだけ**標的を反転します。
+
+これは **AND（かつ）** の機能。古典で欠かせない計算を**取り消し可能**なまま実現できます。
+
+```python {.marimo}
+tof = mo.ui.button(label="Toffoli をかける（|110⟩ → ?）")
+tof
+```
+
+```python {.marimo}
+tof_state = init_state(3)
+tof_state = apply_x(tof_state, 0)       # |100⟩
+tof_state = apply_x(tof_state, 1)       # |110⟩
+tof_before = np.copy(tof_state)
+tof_state = apply_ccnot(tof_state, 0, 1, 2)   # 制御 q0,q1=1 → 標的 q2 反転
+mo.hstack([
+    plot_state(tof_before, title="Before Toffoli: |110>"),
+    plot_state(tof_state, title="After Toffoli: q2 flips -> |111>"),
+])
+```
+
+:::{.callout-tip}
+**見てみよう**
+- `|110⟩` で制御が両方 `1` なので、標的 qubit2 が `0→1` に反転し `|111⟩` になります。
+- `|100⟩`（制御が片方 0）なら**何も起きません**。お試しください。
+- 「2 つの条件が揃ったときだけ動く」操作 ＝ **AND の量子版**。
+:::
+
+## SWAP ゲート：入れ物を入れ替える
+
+**SWAP** は qubit0 と qubit1 の**状態を丸ごと入れ替える**ゲートです。
+
+`|10⟩` → SWAP → `|01⟩` になる様子を確認します。CNOT 3 回の組み合わせで実現できます。
+
+```python {.marimo}
+sw_state = init_state(2)
+sw_state = apply_x(sw_state, 0)           # |10⟩（qubit0 が 1）
+sw_state = apply_swap(sw_state, 0, 1)     # SWAP → |01⟩
+plot_state(sw_state, title="SWAP: |10> -> |01>")
+```
+
+## まとめ
+
+- **Y・S・T**：位相や方向を細かく操るゲート。確率は変えずに状態を回転させる。
+- **SWAP**：2 つの Qubit の状態を入れ替える配線のような操作。
+- **Toffoli（CCNOT）**：2 つの制御が揃ったときだけ反転。**可逆な AND**。
+- 全ゲートは**ユニタリ**＝いつでも逆操作で元に戻せる。
+
+次は、実際の **量子回路の読み方・書き方**（ベル状態・GHZ 状態）をマスターします。
