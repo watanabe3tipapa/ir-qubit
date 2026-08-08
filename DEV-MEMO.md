@@ -116,3 +116,38 @@ quarto preview       # ローカルプレビュー（marimo islands の動作確
 - WASM 実行のため、セル内では numpy / matplotlib のみを前提にする。
 - 初回閲覧時は Pyodide とパッケージのダウンロードが発生する（数秒〜十数秒）。
 - marimo islands は Chrome 推奨（Safari は WASM 性能が劣る）。
+
+## 追録（2026-08-09）：レッスン7〜12 追加と総合検証
+
+### 実装結果
+
+- **シミュレータ拡張**: `lib/sim.py` / `lib/sim_cell.qmd` に `apply_y` / `apply_s` / `apply_t` / `apply_swap` / `apply_ccnot` を追加。
+  SWAP は CNOT×3 の組み合わせ、Toffoli は `apply_cnot` と同じテンソル置換パターン（perm [c1, c2, t] → reshape(8, -1) → `s[[6,7]] = s[[7,6]]`）で実装。
+- **新規レッスン 6 本**（`lessons/07`〜`12`）と、`_quarto.yml` navbar / `index.qmd` / `worksheets.qmd`（Q11〜Q16 など）を更新。
+
+### 追記・発見
+
+1. **同一 .qmd 内で複数の marimo セルがトップレベル `fig`/`ax` を定義すると `MultipleDefinitionError`**。
+   レッスン10・12 で `fig_qft/ax_qft`、`fig_qpe/ax_qpe`、`fig_vqe/ax_vqe`、`fig_shor`、`fig_qml` とセルごとに一意な名前にする必要があった。
+   対策: 各セルで `fig_<内容>` / `ax_<内容>` などの一意名を使う（「実装時の発見」item 3 の具体例）。
+2. **S・T などの位相ゲートを `|0⟩` に掛けてもブロッホ球は回らない**（`|0⟩` は S/T の固有方向）。
+   位相回転を「見せる」には **重ね合わせ状態 `|+⟩` から開始** する（レッスン8 で修正）。
+   - `Y|+⟩` → ブロッホ球 x 軸反転（`|−⟩`）、確率 50/50 のまま
+   - `S|+⟩` → 90° 位相回転、`T|+⟩` → 45° 位相回転
+3. **`|0⟩` に S・T を掛けても位相はゼロ、確率も変動なし**。位相ゲートが「確率を変えず位相だけを変える」ことを示すには、初期状態を重ね合わせにする必要がある。
+4. **レッスン本文の物理的整合性**は `|0⟩` ベースの単純な説明だと崩れる。デモと文をセットで検証する（例: レッスン8 の「確率は変わりません」という記述は Y では正しくない → Y は Pauli で反転ゲート）。
+5. **`quarto render` 実行時の marimo セル実行でエラーが出ても、終了コード 0 の場合がある**（stderr に `MultipleDefinitionError` が出るだけ）。検証は `rg -c "MultipleDefinitionError"` や、生成 HTML の確認で把握するのが確実。
+
+### 検証手法（繰り返し使えるチェック）
+
+- `lib/sim.py` と `lib/sim_cell.qmd` の一致: `ast` で関数・行列の本文を比較（import 行のみ差分で OK）。
+- 複数セルで定義される変数重複・未定義参照の静的解析。
+- 各レッスンの marimo セルの中身をローカル Python（numpy）で実行して数値検証。
+- `quarto render` 後に生成 HTML 中の `MultipleDefinitionError` の有無を `rg` で確認。
+
+### 検証実施結果（2026-08-09）
+
+- `quarto render`: exit 0、`MultipleDefinitionError` 0、Warning 0、15/15 ページ生成。
+- 生成 HTML に marimo 埋め込み・ランタイムエラーなしを確認。
+- 数値ロジック: H⊗H 一様分布、GHZ（|000⟩/|111⟩）、Toffoli/SWAP、QFT 確率総和、VQE 収束、ノイズモデル、S²=Z/T²=S を検証。
+- リンク（全レッスンの `{{< include ../lib/sim_cell.qmd >}}`）、ワークシート Q11〜Q16 も確認。
