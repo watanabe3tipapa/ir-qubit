@@ -25,8 +25,10 @@ pyproject: |
 
 {{< include ../lib/sim_cell.qmd >}}
 
-まずは Y・S・T を `|0⟩` にかけて、**測定結果（確率）** ではなく **状態そのもの** の変化を見てみましょう。
-位相ゲートは確率を変えず、**状態ベクトルの向き（位相）だけ**を変えます。
+まずは **重ね合わせ状態 `|+⟩`（= H|0⟩）** に Y・S・T を 1 回掛けて、**測定確率（棒グラフ）と状態の向き（ブロッホ球）** の変化を比べてみましょう。
+
+- **Y は Pauli ゲート**：ブロッホ球を x 軸まわりに 180° 回し、`|+⟩` を `|-⟩` に反転。
+- **S・T は位相ゲート**：確率を変えず、**ブロッホ球の「経度（位相）」だけ**を回す。
 
 ```python {.marimo}
 gate_kind = mo.ui.radio(
@@ -42,7 +44,7 @@ gate_kind
 ```
 
 ```python {.marimo}
-sg = np.array([1, 0], dtype=complex)
+sg = apply_h(np.array([1, 0], dtype=complex), 0)   # |+⟩ = (|0⟩+|1⟩)/√2
 if gate_kind.value == "y":
     sg = apply_y(sg, 0)
     name = "Y"
@@ -54,14 +56,15 @@ else:
     name = "T"
 mo.hstack([
     plot_bloch(sg, title=f"Bloch sphere after {name}"),
-    plot_state(sg, title=f"State after {name} (probabilities unchanged)"),
+    plot_state(sg, title=f"State after {name} (|+> keeps 50/50 almost)"),
 ], widths=[0.45, 0.55])
 ```
 
 :::{.callout-tip}
 **見てみよう**
-- S・T をかけても確率（棒グラフ）は**ゼロのまま**。でもブロッホ球の「平面の向き」が回っています。
-- **位相 = 波のタイミングのズレ**。目には見えなくても、Qubit 同士を重ね合わせると結果に効いてきます。
+- **Y を選ぶと** ブロッホ球の矢印が x 軸の反対側（`|+⟩ → |-⟩`）に回ります。それでも測定確率は **50%:50%** のまま。
+- **S・T を選ぶと** 確率（棒グラフ）は変わらず、ブロッホ球の矢印だけが **ずっと向きを回して**（位相を回して）いきます。
+- 位相回転は **測定には現れないが、Qubit 同士の干渉には決定的に効く** のです。
 :::
 
 ## Y・S・T と「可逆計算」のイメージ
