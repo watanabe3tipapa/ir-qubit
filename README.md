@@ -11,58 +11,64 @@
 
 # Quantum Computer Starter Kit
 
-**"What is a Qubit?" — a browser-based quantum starter kit that runs without installation.**
+"What is a Qubit?" — a browser-based quantum starter kit that runs without
+installation.
 
-Built with **Quarto × marimo**, this kit uses coin analogies and **live circuit
-simulations** so that even middle school students can intuitively grasp the core
-concepts of quantum computing — superposition, entanglement, and quantum
-algorithms.
+This project is an educational set of interactive lessons and demonstrations
+that aim to make core quantum computing ideas—superposition, entanglement, and
+basic quantum algorithms—accessible through hands-on, browser-executed demos.
+The site is built with Quarto and marimo and includes both in-page WebAssembly
+(Pyodide) simulations and offline Qiskit notebooks for local experimentation.
 
-- **Everything runs in the browser** (WebAssembly / Pyodide). No installation needed.
-- **Interactive demos** — move a slider or click a gate, and the probability and histogram update instantly.
-- **Qiskit notebooks** included for those ready to try a real quantum SDK.
+Live demo: https://watanabe3tipapa.github.io/ir-qubit/
+
+## What this repository contains
+
+- Six interactive lessons (concepts include qubit, superposition,
+  entanglement, gates, measurement, and algorithms)
+- Browser-executed demos implemented to run on Pyodide (WASM) so they work in
+  the browser without installing Python packages
+- A self-contained educational state-vector simulator: lib/sim.py
+- Qiskit notebooks for local execution (not runnable in the browser)
+- Printable worksheets for classroom or self-study use
+- Quarto site sources and a GitHub Pages deployment (the site is auto-deployed)
+
+## Key features
+
+- Runs in the browser via Pyodide (no installation required for the in-page demos)
+- Interactive controls: sliders and clickable gates update state vectors and
+  histograms in real time
+- Qiskit notebooks included for users who want to run experiments locally
+- Educational numpy-based simulator included for WASM-executed demos
 
 ## Motivation
 
-Quantum computing sounds fascinating, but most tutorials assume you already know
-linear algebra and Dirac notation. Inspired by *Nielsen & Chuang*, I wanted a
-place where learners can *feel* superposition and entanglement before ever
-writing a formula — by touching sliders and watching a coin toss turn into a
-quantum coin.
+Many introductions to quantum computing assume prior knowledge of linear
+algebra and Dirac notation. This starter kit emphasizes intuition-through
+interaction: learners can manipulate parameters and immediately observe the
+probabilistic outcomes and state changes.
 
-This kit started as a draft produced through a long, long conversation with an
-OpenAI LLM. There is still a lot for us to learn about quantum computing, so the
-content is by no means authoritative — feedback and corrections are very welcome.
+The project began as a draft and continues to be improved; feedback and
+corrections are welcome.
 
-## Features
+## Try it locally
 
-- **Runs in the browser** — demos execute on Pyodide (WASM); zero setup
-- **Six interactive lessons** — Qubit, superposition, entanglement, gates, measurement, algorithms
-- **Live simulations** — state vectors and histograms recalculate in real time
-- **Printable worksheets** — for classroom use and self-study review
-- **Qiskit notebooks** — hands-on experiments with the real quantum SDK (local run)
-- **Self-contained numpy simulator** — an educational state-vector simulator (`lib/sim.py`)
-- **Auto-deployed** — GitHub Pages workflow publishes the latest site on every push
+The repository includes development tooling and commands in the top-level
+README. Example steps that appear in the project sources:
 
-## Screenshot
-
-<!-- Add screenshots here -->
-
-Try the live site: [Quantum Computer Starter Kit](https://watanabe3tipapa.github.io/ir-qubit/)
-
-## Installation
+Installation (examples shown in the project README):
 
 ```bash
-# 1) Environment setup (with uv)
+# Option A: sync with uv (project uses 'uv' in examples)
 uv sync
 
-# or, with a plain venv
+# Option B: plain virtual environment
 python -m venv .venv
 source .venv/bin/activate
 pip install marimo numpy matplotlib qiskit qiskit-aer
 ```
 
-## Usage
+Preview and build (examples shown in the project README):
 
 ```bash
 # Local preview at http://localhost:4321
@@ -72,33 +78,50 @@ uv run quarto preview
 uv run quarto render
 ```
 
-Run the Qiskit notebooks on your own machine:
+Qiskit notebooks (run locally):
 
 ```bash
 uv run marimo edit notebooks/01_qubit_superposition.py
 uv run marimo edit notebooks/02_entanglement.py
 ```
 
-> Technical note: the in-page demos run on Pyodide (WASM), so they rely only on
-> numpy / matplotlib. Qiskit is Rust-based and cannot run in WASM, so the site
-> ships its own educational numpy simulator and bundles Qiskit notebooks for
-> local execution. See [DEV-MEMO.md](DEV-MEMO.md) for details.
+Notes and technical details are available in DEV-MEMO.md in the repository.
+
+## Development and dependencies
+
+The project metadata (pyproject.toml) declares:
+
+- requires-python = ">=3.13"
+- dependencies include: altair, marimo, matplotlib, numpy, pandas, qiskit,
+  qiskit-aer (specific versions are listed in pyproject.toml)
+
+Refer to pyproject.toml and the repository files for exact dependency versions
+and development instructions.
 
 ## Contributing
 
-Contributions are welcome!
+Contributions are welcome. The repository's README lists a standard GitHub
+workflow for contributions:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a [Pull Request](https://github.com/watanabe3tipapa/ir-qubit/pulls)
+2. Create a feature branch
+3. Commit your changes
+4. Push and open a Pull Request
+
+Please follow existing project conventions and open issues or PRs on GitHub.
 
 ## License
 
-- **Documentation & images**: [CC BY 4.0](LICENSE-CC-BY)
-- **Code**: [Apache-2.0](LICENSE)
+- Documentation & images: CC BY 4.0 (see LICENSE-CC-BY)
+- Code: Apache-2.0 (see LICENSE)
+
+## Project status
+
+- Repository updated at: 2026-08-08T22:09:55Z
+- The project is not archived and has an active maintenance badge in the
+  repository README.
 
 ## Contact
 
-GitHub: [https://github.com/watanabe3tipapa/ir-qubit](https://github.com/watanabe3tipapa/ir-qubit)
+GitHub: https://github.com/watanabe3tipapa/ir-qubit
+Website (live demo): https://watanabe3tipapa.github.io/ir-qubit/
